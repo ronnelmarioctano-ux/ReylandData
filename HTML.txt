@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mechanic Dashboard // Leaderboard System</title>
+    <style>
+        :root {
+            --bg-dark: #070d14;
+            --bg-panel: #0c1520;
+            --bg-item: #111e2e;
+            --border-color: #1b2e46;
+            --text-main: #ffffff;
+            --text-muted: #647b95;
+            --cyan: #00f0ff;
+            --green: #00ff66;
+            --yellow: #ffcc00;
+            --red: #ff3344;
+            --purple: #cc33ff;
+            --orange: #ff8800;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            padding: 20px;
+            background-image: linear-gradient(rgba(27, 46, 70, 0.1) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(27, 46, 70, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-panel);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--cyan);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--cyan);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+        }
+
+        header h1 {
+            font-size: 1.4rem;
+            letter-spacing: 2px;
+            font-weight: 800;
+        }
+
+        .sys-status {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+        }
+        .sys-status span {
+            color: var(--cyan);
+            animation: pulse 2s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; text-shadow: 0 0 4px rgba(0, 240, 255, 0.2); }
+            100% { opacity: 1; text-shadow: 0 0 12px rgba(0, 240, 255, 0.8); }
+        }
+
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 20px;
+        }
+
+        .sidebar {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 20px 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-height: 82vh;
+        }
+
+        .sidebar h2 {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            letter-spacing: 1.5px;
+            border-left: 3px solid var(--cyan);
+            padding-left: 8px;
+        }
+
+        .search-wrapper {
+            position: relative;
+        }
+        .search-input {
+            width: 100%;
+            background-color: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 10px 12px;
+            color: var(--text-main);
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: var(--cyan);
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.15);
+        }
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .leaderboard-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            overflow-y: auto;
+            flex-grow: 1;
+            padding-right: 4px;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--bg-item);
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .leaderboard-item:hover {
+            border-color: var(--text-muted);
+            background-color: rgba(27, 46, 70, 0.3);
+        }
+
+        .leaderboard-item.active {
+            border: 1px solid var(--cyan);
+            color: var(--cyan);
+            box-shadow: inset 0 0 8px rgba(0, 240, 255, 0.1);
+        }
+
+        .leaderboard-item .score {
+            color: var(--yellow);
+        }
+        .leaderboard-item.active .score {
+            color: var(--cyan);
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .profile-card {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--yellow);
+            border-radius: 6px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .profile-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .crown-icon {
+            border: 2px solid var(--yellow);
+            padding: 15px;
+            border-radius: 4px;
+            font-size: 1.8rem;
+            background: rgba(255, 204, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .profile-info h2 {
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .profile-info p {
+            font-size: 0.75rem;
+            color: var(--yellow);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: color 0.3s ease;
+        }
+
+        .profile-stats {
+            width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .stat-bar-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-label { width: 130px; }
+        .stat-bar-bg {
+            flex-grow: 1;
+            height: 8px;
+            background-color: #121e2d;
+            margin: 0 10px;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .stat-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.5s cubic-bezier(0.1, 0.8, 0.3, 1);
+        }
+        .stat-val { width: 45px; text-align: right; }
+
+        .c-green { color: var(--green); } .bg-green { background-color: var(--green); }
+        .c-purple { color: var(--purple); } .bg-purple { background-color: var(--purple); }
+        .c-orange { color: var(--orange); } .bg-orange { background-color: var(--orange); }
+        .c-red { color: var(--red); } .bg-red { background-color: var(--red); }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .metric-box {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 15px 20px;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .metric-box:hover {
+            transform: translateY(-2px);
+            border-color: var(--border-color);
+        }
+        .metric-box.m-cyan { border-left: 4px solid var(--cyan); }
+        .metric-box.m-green { border-left: 4px solid var(--green); }
+        .metric-box.m-yellow { border-left: 4px solid var(--yellow); }
+        .metric-box.m-red { border-left: 4px solid var(--red); }
+
+        .metric-title {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .metric-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+        .v-cyan { color: var(--cyan); }
+        .v-green { color: var(--green); }
+        .v-yellow { color: var(--yellow); }
+        .v-red { color: var(--red); }
+
+        .log-section {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            min-height: 240px;
+        }
+
+        .log-section h3 {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            letter-spacing: 1.5px;
+            margin-bottom: 20px;
+            border-left: 3px solid var(--cyan);
+            padding-left: 8px;
+            text-transform: uppercase;
+        }
+
+        .log-headers {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            padding: 0 10px;
+            border-bottom: 1px solid rgba(27, 46, 70, 0.5);
+            padding-bottom: 6px;
+        }
+
+        .log-container-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .log-row-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: rgba(17, 30, 46, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 12px 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            animation: fadeIn 0.3s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .log-status-box {
+            background-color: rgba(17, 30, 46, 0.2);
+            border: 1px dashed var(--border-color);
+            border-radius: 4px;
+            padding: 30px;
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>MECHANIC DASHBOARD // LEADERBOARD SYSTEM V4.3</h1>
+        <div class="sys-status">SYS.LOC: <span>ONLINE</span> // OPERATIONAL_METRICS_V4.3</div>
+    </header>
+
+    <div class="dashboard-container">
+        
+        <aside class="sidebar">
+            <h2>SQUAD LEADERBOARD</h2>
+            <div class="search-wrapper">
+                <input type="text" class="search-input" id="search-box" placeholder="FILTER BY OPERATOR NAME...">
+            </div>
+            <div class="leaderboard-list" id="leaderboard-list"></div>
+        </aside>
+
+        <main class="main-content">
+            
+            <section class="profile-card" id="profile-card">
+                <div class="profile-left">
+                    <div class="crown-icon" id="rank-icon">👑</div>
+                    <div class="profile-info">
+                        <h2 id="p-name">// LOAD_ERROR</h2>
+                        <p id="p-tier">TIER RANK: UNKNOWN</p>
+                    </div>
+                </div>
+                
+                <div class="profile-stats">
+                    <div class="stat-bar-row">
+                        <span class="stat-label c-green">ACCURACY RATE</span>
+                        <div class="stat-bar-bg"><div class="stat-bar-fill bg-green" id="bar-accuracy"></div></div>
+                        <span class="stat-val c-green" id="val-accuracy">0%</span>
+                    </div>
+                    <div class="stat-bar-row">
+                        <span class="stat-label c-purple">DISPUTED CASES</span>
+                        <div class="stat-bar-bg"><div class="stat-bar-fill bg-purple" id="bar-disputed"></div></div>
+                        <span class="stat-val c-purple" id="val-disputed">0</span>
+                    </div>
+                    <div class="stat-bar-row">
+                        <span class="stat-label c-orange">RESOLVED DISPUTES</span>
+                        <div class="stat-bar-bg"><div class="stat-bar-fill bg-orange" id="bar-resolved"></div></div>
+                        <span class="stat-val c-orange" id="val-resolved">0</span>
+                    </div>
+                    <div class="stat-bar-row">
+                        <span class="stat-label c-red">ERROR COUNTS</span>
+                        <div class="stat-bar-bg"><div class="stat-bar-fill bg-red" id="bar-errors"></div></div>
+                        <span class="stat-val c-red" id="val-errors">0</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="metrics-grid">
+                <div class="metric-box m-cyan">
+                    <div class="metric-title">Audit Volume</div>
+                    <div class="metric-value v-cyan" id="m-volume">0</div>
+                </div>
+                <div class="metric-box m-green">
+                    <div class="metric-title">Sampled Cases</div>
+                    <div class="metric-value v-green" id="m-sampled">0</div>
+                </div>
+                <div class="metric-box m-yellow">
+                    <div class="metric-title">Dispute Rate</div>
+                    <div class="metric-value v-yellow" id="m-dispute-rate">0%</div>
+                </div>
+                <div class="metric-box m-red">
+                    <div class="metric-title">Critical Flaws</div>
+                    <div class="metric-value v-red" id="m-flaws">0</div>
+                </div>
+            </section>
+
+            <section class="log-section">
+                <h3>Audit Log Trail // Threat Breakdown</h3>
+                <div class="log-headers">
+                    <span>POLICY INFRACTION THREAT GROUP</span>
+                    <span>INCIDENTS COUNTER</span>
+                </div>
+                <div id="log-dynamic-root" style="display: flex; flex-direction: column; flex-grow: 1;">
+                    <div class="log-status-box" id="log-box">
+                        LOADING SQUAD TRANSCRIPTS...
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        // Updated Performance Metrics Dataset 
+        const squadData = [
+            { name: "SEP-RONNELMARIO CURPOZ TANO", volume: 5693, sampled: 372, disputed: 8, resolved: 7, errors: 0, accuracy: 100.00 },
+            { name: "SEP-MARVIN KYLE VILLARIN PEDRERE", volume: 6913, sampled: 406, disputed: 10, resolved: 10, errors: 0, accuracy: 100.00 },
+            { name: "SEP-FRANCIS JOHN NAZARENO PACO", volume: 8107, sampled: 457, disputed: 6, resolved: 6, errors: 1, accuracy: 99.78 },
+            { name: "SEP-JAE-ANN BEBIS ESPERANZA", volume: 7333, sampled: 398, disputed: 7, resolved: 7, errors: 1, accuracy: 99.75 },
+            { name: "SEP-CHARMINE PALMA GIL CALUNSAG", volume: 6643, sampled: 442, disputed: 13, resolved: 9, errors: 2, accuracy: 99.55 },
+            { name: "SEP-AXCEL MASANGKAY BAGUE", volume: 6986, sampled: 399, disputed: 13, resolved: 11, errors: 2, accuracy: 99.50 },
+            { name: "SEP-ROLDAN GUERRA MONDANO", volume: 6097, sampled: 362, disputed: 13, resolved: 9, errors: 2, accuracy: 99.45 },
+            { name: "SEP-DARREN JOHN SAMINADO", volume: 6403, sampled: 325, disputed: 12, resolved: 12, errors: 2, accuracy: 99.38 },
+            { name: "SEP-MAY ANN JOY BOGUECOSA NARISMA", volume: 7975, sampled: 452, disputed: 12, resolved: 10, errors: 3, accuracy: 99.34 },
+            { name: "SEP-VIRNIE JANE MILLA", volume: 7758, sampled: 417, disputed: 7, resolved: 6, errors: 3, accuracy: 99.28 },
+            { name: "SEP-ERIKA GIALON TALORONG", volume: 7439, sampled: 405, disputed: 7, resolved: 6, errors: 3, accuracy: 99.26 },
+            { name: "SEP-MARY CRIS BURTANOG REBALDE", volume: 8853, sampled: 359, disputed: 11, resolved: 11, errors: 3, accuracy: 99.15 },
+            { name: "SEP-BENHAR ABDUL AUJASA", volume: 7487, sampled: 445, disputed: 9, resolved: 9, errors: 4, accuracy: 99.10 },
+            { name: "SEP-PHILIP JAY TOLEDO RAYMUNDO", volume: 7691, sampled: 408, disputed: 17, resolved: 12, errors: 4, accuracy: 99.02 },
+            { name: "SEP-ROI CASIDSID", volume: 7933, sampled: 397, disputed: 14, resolved: 13, errors: 4, accuracy: 98.99 },
+            { name: "SEP-DIVINA CAMBEL PATIGDAS", volume: 6763, sampled: 368, disputed: 10, resolved: 10, errors: 4, accuracy: 98.91 },
+            { name: "SEP-ROWELA ANGELIA FERNANDO", volume: 5858, sampled: 267, disputed: 8, resolved: 8, errors: 3, accuracy: 98.88 },
+            { name: "SEP-MERRYJANE MACARAYO", volume: 8461, sampled: 625, disputed: 16, resolved: 15, errors: 7, accuracy: 98.88 },
+            { name: "SEP-JUSTINE BANLUTA", volume: 6363, sampled: 390, disputed: 14, resolved: 14, errors: 5, accuracy: 98.72 }
+        ];
+
+        // Sort data explicitly by accuracy DESC, then volume DESC to form perfect ranking hierarchy
+        squadData.sort((a, b) => b.accuracy - a.accuracy || b.volume - a.volume);
+
+        const listContainer = document.getElementById('leaderboard-list');
+        const searchBox = document.getElementById('search-box');
+        const logDynamicRoot = document.getElementById('log-dynamic-root');
+
+        function generateAuditLogs(operator) {
+            if (operator.errors === 0) {
+                return `<div class="log-status-box" id="log-box" style="color: var(--green); border-color: var(--border-color);">
+                            ✨ FLUENT INTEGRITY: NO LOGGED INFRACTIONS RECORDED ✨
+                        </div>`;
+            }
+
+            let htmlOutput = `<div class="log-container-wrapper">`;
+            let remainingErrors = operator.errors;
+
+            if (remainingErrors > 0) {
+                // Determine high split counts based on error volume
+                let criticalCount = Math.ceil(remainingErrors * 0.6);
+                let driftCount = remainingErrors - criticalCount;
+
+                htmlOutput += `
+                    <div class="log-row-item">
+                        <span class="c-red">CRITICAL POLICY DRIFT // DATA MISALIGNMENT</span>
+                        <span class="c-red">${String(criticalCount).padStart(2, '0')}</span>
+                    </div>`;
+                
+                if (driftCount > 0) {
+                    htmlOutput += `
+                        <div class="log-row-item">
+                            <span style="color: var(--orange)">VALIDATION DROPS // UNCLASSIFIED EXCEPTION</span>
+                            <span style="color: var(--orange)">${String(driftCount).padStart(2, '0')}</span>
+                        </div>`;
+                }
+            }
+            htmlOutput += `</div>`;
+            return htmlOutput;
+        }
+
+        function updateDashboard(operator) {
+            document.getElementById('p-name').innerText = `// ${operator.name}`;
+            document.getElementById('val-accuracy').innerText = `${operator.accuracy.toFixed(2)}%`;
+            document.getElementById('val-disputed').innerText = operator.disputed;
+            document.getElementById('val-resolved').innerText = operator.resolved;
+            document.getElementById('val-errors').innerText = operator.errors;
+
+            document.getElementById('m-volume').innerText = operator.volume.toLocaleString();
+            document.getElementById('m-sampled').innerText = operator.sampled;
+            
+            const disputeRate = operator.sampled > 0 ? ((operator.disputed / operator.sampled) * 100).toFixed(1) : 0;
+            document.getElementById('m-dispute-rate').innerText = `${disputeRate}%`;
+            document.getElementById('m-flaws').innerText = operator.errors;
+
+            // Bar updates scaled to relative metrics
+            document.getElementById('bar-accuracy').style.width = `${operator.accuracy}%`;
+            document.getElementById('bar-disputed').style.width = `${Math.min((operator.disputed / 20) * 100, 100)}%`;
+            document.getElementById('bar-resolved').style.width = `${operator.disputed > 0 ? (operator.resolved / operator.disputed) * 100 : 0}%`;
+            document.getElementById('bar-errors').style.width = `${Math.min((operator.errors / 8) * 100, 100)}%`;
+
+            const card = document.getElementById('profile-card');
+            const tierText = document.getElementById('p-tier');
+            const rankIcon = document.getElementById('rank-icon');
+
+            if (operator.accuracy === 100) {
+                tierText.innerText = "TIER RANK: CHAMPION / PERFECT SQUAD";
+                tierText.style.color = "var(--yellow)";
+                card.style.borderColor = "var(--yellow)";
+                rankIcon.innerText = "👑";
+                rankIcon.style.borderColor = "var(--yellow)";
+            } else if (operator.accuracy >= 99.00) {
+                tierText.innerText = "TIER RANK: ELITE VANGUARD";
+                tierText.style.color = "var(--cyan)";
+                card.style.borderColor = "var(--cyan)";
+                rankIcon.innerText = "⚔️";
+                rankIcon.style.borderColor = "var(--cyan)";
+            } else {
+                tierText.innerText = "TIER RANK: UNDER AUDIT STANDARDS";
+                tierText.style.color = "var(--red)";
+                card.style.borderColor = "var(--red)";
+                rankIcon.innerText = "🚨";
+                rankIcon.style.borderColor = "var(--red)";
+            }
+
+            logDynamicRoot.innerHTML = generateAuditLogs(operator);
+        }
+
+        function renderLeaderboard(filterText = "") {
+            listContainer.innerHTML = "";
+            let standardMatchFound = false;
+
+            squadData.forEach((item) => {
+                if (!item.name.toLowerCase().includes(filterText.toLowerCase())) return;
+
+                const row = document.createElement('div');
+                const currentActiveName = document.getElementById('p-name').innerText.replace('// ', '');
+                const isItemActive = currentActiveName === item.name || (!currentActiveName && !standardMatchFound);
+                
+                row.className = `leaderboard-item ${isItemActive ? 'active' : ''}`;
+                row.innerHTML = `
+                    <span>${item.name}</span>
+                    <span class="score">${item.accuracy.toFixed(2)}%</span>
+                `;
+                
+                row.addEventListener('click', () => {
+                    document.querySelectorAll('.leaderboard-item').forEach(r => r.classList.remove('active'));
+                    row.classList.add('active');
+                    updateDashboard(item);
+                });
+
+                listContainer.appendChild(row);
+                if (isItemActive) standardMatchFound = true;
+            });
+        }
+
+        searchBox.addEventListener('input', (e) => {
+            renderLeaderboard(e.target.value);
+        });
+
+        // Bootstrap load sequences
+        if(squadData.length > 0) {
+            renderLeaderboard();
+            updateDashboard(squadData[0]);
+        }
+    </script>
+</body>
+</html>
